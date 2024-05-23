@@ -39,39 +39,46 @@ func InitGame() *Game {
 }
 
 func (game *Game) RunGame() {
-  go keyboardListen()
+  go game.keyboardListen()
   // game loop
   for {
-    game.BirdPosition.X++
+    game.BirdPosition.Y++
+    if game.BirdPosition.Y == canvasY {
+      fmt.Println("You died")
+      os.Exit(0)
+      break
+    }
     game.render()
-    time.Sleep(time.Millisecond * 200)
+    time.Sleep(time.Millisecond * 150)
     clearScreen()
   }
 }
 
 func (game *Game) render() {
-  game.Canvas[game.BirdPosition.X][game.BirdPosition.Y].Type = Bird
+  game.Canvas[game.BirdPosition.Y][game.BirdPosition.X].Type = Bird
   for i := range game.Canvas {
     for j := range game.Canvas[i] {
       fmt.Print(game.Canvas[i][j].Type)
     }
     fmt.Println()
   }
-  game.Canvas[game.BirdPosition.X][game.BirdPosition.Y].Type = Canvaspixel
+  game.Canvas[game.BirdPosition.Y][game.BirdPosition.X].Type = Canvaspixel
 }
 
-func (game *Game) birdAnimate() {
-
-}
-
-func keyboardListen() {
+func (game *Game) keyboardListen() {
   exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
 
   var b []byte = make([]byte, 1)
   for {
     os.Stdin.Read(b)
     input := string(b)
-    fmt.Println(input)
+    if input == Up {
+      if game.BirdPosition.Y < 5 {
+        game.BirdPosition.Y = 0
+      } else {
+        game.BirdPosition.Y -= 5
+      }
+    }
   }
 }
 
@@ -84,12 +91,12 @@ func clearScreen() {
 const (
   Tower       = "#"
   Bird        = "@"
-  Canvaspixel = "_"
+  Canvaspixel = " "
 
   // Directions
   Up        = " "
 
   // Canvas settings
-  canvasX   = 80
-  canvasY   = 20
+  canvasX   = 100
+  canvasY   = 30
 )
