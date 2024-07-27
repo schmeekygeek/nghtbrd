@@ -83,6 +83,7 @@ func (game *Game) spawnTower() {
     game.canvas[towerLengthBottomOffset][canvasX - 1].Type = Canvaspixel
     game.canvas[towerLengthBottomOffset + 1][canvasX - 1].Type = Canvaspixel
     game.canvas[towerLengthBottomOffset + 2][canvasX - 1].Type = Canvaspixel
+    game.canvas[towerLengthBottomOffset + 3][canvasX - 1].Type = Canvaspixel
   }
 }
 
