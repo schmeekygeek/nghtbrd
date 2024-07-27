@@ -5,11 +5,13 @@ import (
 	"os"
 	"os/exec"
 	"time"
+  "math/rand"
 )
 
 type Game struct {
-  Canvas [canvasY][canvasX]Point
-  BirdPosition Point
+  canvas       [canvasY][canvasX]Point
+  birdPosition Point
+  hasLost      bool
 }
 
 type Point struct {
@@ -19,6 +21,7 @@ type Point struct {
 
 func InitGame() *Game {
   game := new(Game)
+  game.hasLost = false
   points := [canvasY][canvasX]Point{}
   for i := range points {
     for j := range points[i] {
@@ -28,44 +31,80 @@ func InitGame() *Game {
         Type: Canvaspixel,
       }
     }
-    game.BirdPosition = Point{
+    game.birdPosition = Point{
     	X:    8,
     	Y:    7,
     	Type: Bird,
     }
   }
-  game.Canvas = points
+  game.canvas = points
   return game
 }
 
 func (game *Game) RunGame() {
-  go game.keyboardListen()
+  go game.inputListen()
+  go game.spawnTower()
   // game loop
   for {
-    game.BirdPosition.Y++
-    if game.BirdPosition.Y == canvasY {
+    // some game logic
+    if game.hasLost {
       fmt.Println("You died")
       os.Exit(0)
-      break
     }
-    game.render()
+    game.birdPosition.Y++
+    if game.birdPosition.Y == canvasY {
+      game.hasLost = true
+    } else if game.canvas[game.birdPosition.Y][game.birdPosition.X].Type == Tower {
+      game.hasLost = true
+    }
+    if game.hasLost {
+      fmt.Println("You died")
+      os.Exit(0)
+    }
+    game.tickAndRender()
     time.Sleep(time.Millisecond * 150)
     clearScreen()
   }
 }
 
-func (game *Game) render() {
-  game.Canvas[game.BirdPosition.Y][game.BirdPosition.X].Type = Bird
-  for i := range game.Canvas {
-    for j := range game.Canvas[i] {
-      fmt.Print(game.Canvas[i][j].Type)
+func (game *Game) spawnTower() {
+  for {
+    time.Sleep(3 * time.Second)
+    towerLengthBottomOffset := rand.Intn(canvasY - 5)
+    fmt.Println(towerLengthBottomOffset)
+
+    for i := 0; i < canvasY; i++ {
+      game.canvas[i][canvasX - 1] = Point{
+      	X:    i,
+      	Y:    canvasY,
+      	Type: Tower,
+      }
+    }
+    game.canvas[towerLengthBottomOffset][canvasX - 1].Type = Canvaspixel
+    game.canvas[towerLengthBottomOffset + 1][canvasX - 1].Type = Canvaspixel
+    game.canvas[towerLengthBottomOffset + 2][canvasX - 1].Type = Canvaspixel
+  }
+}
+
+func (game *Game) tickAndRender() {
+  for i := range game.canvas {
+    for j := range game.canvas[i] {
+      // render
+      if i == game.birdPosition.Y && j == game.birdPosition.X {
+        fmt.Print(Bird)
+      } else {
+        fmt.Print(game.canvas[i][j].Type)
+      }
+      if game.canvas[i][j].Type != Bird && j != 0 {
+        game.canvas[i][j - 1] = game.canvas[i][j]
+        game.canvas[i][j].Type = Canvaspixel
+      }
     }
     fmt.Println()
   }
-  game.Canvas[game.BirdPosition.Y][game.BirdPosition.X].Type = Canvaspixel
 }
 
-func (game *Game) keyboardListen() {
+func (game *Game) inputListen() {
   exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
 
   var b []byte = make([]byte, 1)
@@ -73,10 +112,10 @@ func (game *Game) keyboardListen() {
     os.Stdin.Read(b)
     input := string(b)
     if input == Up {
-      if game.BirdPosition.Y < 5 {
-        game.BirdPosition.Y = 0
+      if game.birdPosition.Y < 5 {
+        game.birdPosition.Y = 0
       } else {
-        game.BirdPosition.Y -= 5
+        game.birdPosition.Y -= 5
       }
     }
   }
@@ -89,14 +128,14 @@ func clearScreen() {
 }
 
 const (
-  Tower       = "#"
-  Bird        = "@"
+  Tower       = "❒"
+  Bird        = "✈"
   Canvaspixel = " "
 
   // Directions
   Up        = " "
 
   // Canvas settings
-  canvasX   = 100
-  canvasY   = 30
+  canvasX   = 50
+  canvasY   = 20
 )
