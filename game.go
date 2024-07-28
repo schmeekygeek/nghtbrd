@@ -12,6 +12,7 @@ type Game struct {
   canvas       [canvasY][canvasX]Point
   birdPosition Point
   hasLost      bool
+  score        int
 }
 
 type Point struct {
@@ -22,6 +23,7 @@ type Point struct {
 func InitGame() *Game {
   game := new(Game)
   game.hasLost = false
+  game.score = 0
   points := [canvasY][canvasX]Point{}
   for i := range points {
     for j := range points[i] {
@@ -47,6 +49,7 @@ func (game *Game) RunGame() {
   // game loop
   for {
     // some game logic
+    fmt.Println("Your score:", game.score)
     if game.hasLost {
       fmt.Println("You died")
       os.Exit(0)
@@ -56,10 +59,13 @@ func (game *Game) RunGame() {
       game.hasLost = true
     } else if game.canvas[game.birdPosition.Y][game.birdPosition.X].Type == Tower {
       game.hasLost = true
-    }
+    } 
     if game.hasLost {
       fmt.Println("You died")
       os.Exit(0)
+    }
+    if game.canvas[canvasY - 1][game.birdPosition.X].Type == Tower || game.canvas[0][game.birdPosition.X].Type == Tower {
+      game.score++
     }
     game.tickAndRender()
     time.Sleep(time.Millisecond * 150)
@@ -113,10 +119,10 @@ func (game *Game) inputListen() {
     os.Stdin.Read(b)
     input := string(b)
     if input == Up {
-      if game.birdPosition.Y < 5 {
+      if game.birdPosition.Y < 4 {
         game.birdPosition.Y = 0
       } else {
-        game.birdPosition.Y -= 5
+        game.birdPosition.Y -= 4
       }
     }
   }
